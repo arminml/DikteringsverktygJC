@@ -10,6 +10,12 @@ export function openDb(path) {
  CREATE TABLE IF NOT EXISTS feedback(id TEXT PRIMARY KEY, org_id TEXT NOT NULL REFERENCES organizations(id), teacher_id TEXT, student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE, created_at TEXT NOT NULL, notes TEXT NOT NULL, text TEXT NOT NULL, channel TEXT NOT NULL, subject TEXT NOT NULL, recipient TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', error TEXT, provider_id TEXT);
  CREATE INDEX IF NOT EXISTS feedback_student ON feedback(org_id,student_id,created_at);
  CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, expires INTEGER NOT NULL);
+ CREATE TABLE IF NOT EXISTS ai_settings(org_id TEXT PRIMARY KEY REFERENCES organizations(id),ciphertext TEXT,iv TEXT,tag TEXT);
+ CREATE TABLE IF NOT EXISTS ai_connections(org_id TEXT NOT NULL REFERENCES organizations(id),provider TEXT NOT NULL,ciphertext TEXT NOT NULL,iv TEXT NOT NULL,tag TEXT NOT NULL,PRIMARY KEY(org_id,provider));
+ CREATE TABLE IF NOT EXISTS ai_preferences(org_id TEXT PRIMARY KEY REFERENCES organizations(id),provider TEXT NOT NULL,model TEXT NOT NULL);
  UPDATE feedback SET status='unknown',error='Servern startades om under utskicket. Kontrollera leverantören innan ett nytt utskick.' WHERE status='sending';`);
+ const columns=db.prepare('PRAGMA table_info(feedback)').all().map(c=>c.name);
+ if(!columns.includes('demo_mode'))db.exec('ALTER TABLE feedback ADD COLUMN demo_mode INTEGER NOT NULL DEFAULT 0');
+ if(!columns.includes('generation_source'))db.exec("ALTER TABLE feedback ADD COLUMN generation_source TEXT NOT NULL DEFAULT 'unknown'");
  return db;
 }
